@@ -1,5 +1,6 @@
 from .kis_api import fetch_candles
 
+
 def format_chart_output(raw_data: list):
     return [
         {
@@ -12,6 +13,7 @@ def format_chart_output(raw_data: list):
         }
         for item in reversed(raw_data)
     ]
+
 
 def get_chart_data(symbol: str, timeframe: str):
     output = fetch_candles(symbol, timeframe)

@@ -12,6 +12,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/chart/{timeframe}")
 def fetch_chart(symbol: str, timeframe: str = "daily"):
     """

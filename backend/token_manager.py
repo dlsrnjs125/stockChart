@@ -9,27 +9,42 @@ load_dotenv()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TOKEN_CACHE_FILE = os.path.join(BASE_DIR, "token_cache.json")
 
+
+# ✅ 캐시된 토큰 로드
 def load_cached_token():
     if not os.path.exists(TOKEN_CACHE_FILE):
         return None
 
     with open(TOKEN_CACHE_FILE, "r") as f:
         data = json.load(f)
-        if time.time() < data.get("expires_at", 0):
+
+        # ✅ 강제 형변환 추가 (에러 방지용)
+        try:
+            expires_at = float(data.get("expires_at", 0))
+        except ValueError:
+            print("❌ 캐시된 expires_at 형식이 잘못됨")
+            return None
+
+        if time.time() < expires_at:
             print("✅ 캐시된 토큰 사용")
             return data["access_token"]
         else:
             print("⏰ 토큰 만료됨")
+
     return None
 
-def save_token_to_cache(access_token: str, expires_in: int):
-    expires_at = time.time() + expires_in - 60
-    with open(TOKEN_CACHE_FILE, "w") as f:
-        json.dump({
-            "access_token": access_token,
-            "expires_at": expires_at
-        }, f)
 
+# ✅ 토큰 저장
+def save_token_to_cache(access_token: str, expires_in: int):
+    expires_at = time.time() + expires_in - 60  # 유효시간 1분 여유
+    with open(TOKEN_CACHE_FILE, "w") as f:
+        json.dump(
+            {"access_token": access_token, "expires_at": expires_at},  # float으로 저장
+            f,
+        )
+
+
+# ✅ 토큰 발급
 def get_access_token():
     cached = load_cached_token()
     if cached:
@@ -41,7 +56,7 @@ def get_access_token():
     data = {
         "grant_type": "client_credentials",
         "appkey": os.getenv("APP_KEY"),
-        "appsecret": os.getenv("APP_SECRET")
+        "appsecret": os.getenv("APP_SECRET"),
     }
 
     res = requests.post(url, headers=headers, data=data)

@@ -59,7 +59,6 @@ stockChartApp/
 APP_KEY=발급받은_API_KEY
 APP_SECRET=발급받은_SECRET
 BASE_URL=https://openapi.koreainvestment.com:9443
-ACCOUNT_NO=본인계좌번호 (실전)
 ```
 
 ---
@@ -85,11 +84,10 @@ ACCOUNT_NO=본인계좌번호 (실전)
 ### 백엔드 실행 (FastAPI)
 
 ```bash
-cd backend
 python -m venv venv
 source venv/bin/activate  # 윈도우: venv\Scripts\activate
 pip install -r ../requirements.txt
-uvicorn main:app --reload
+uvicorn backend.main:app --reload
 ```
 
 ### 프론트엔드 실행 (React)
@@ -108,12 +106,5 @@ npm run dev
 
 > 한국투자증권 일자별 API는 최근 30일(주,월 단위 기준)만 지원됩니다.
 > ![alt text](image.png)
-
----
-
-## 👨‍💻 Author
-
-> 개발자: `inkwon`  
-> GitHub: [https://github.com/사용자명](https://github.com/사용자명)
 
 ---
