@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { fetchCandles, fetchStockSummary, StockSummary } from '../api/stockApi';
+import {
+  fetchCandles,
+  fetchStockSummary,
+  fetchFinancialRatios,
+  StockSummary,
+  FinancialResponse
+} from '../api/stockApi';
 import { StockCandle } from '../types/stock';
 import { D3CandlestickChart } from './D3CandlestickChart';
 import { StockSummaryCard } from './StockSummaryCard';
+import { FinancialCard } from './FinancialCardText'; // ✅ 추가
+import { FinancialChart } from './FinancialChart';
+import { FinancialGauge } from './FinancialGauge';
 
 interface StockInfo {
   회사명: string;
@@ -17,9 +26,9 @@ export const ChartWrapper: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [stockList, setStockList] = useState<StockInfo[]>([]);
   const [suggestions, setSuggestions] = useState<StockInfo[]>([]);
-  const [summary, setSummary] = useState<StockSummary | null>(null); // ✅ 종목 요약 상태 추가
+  const [summary, setSummary] = useState<StockSummary | null>(null);
+  const [financial, setFinancial] = useState<FinancialResponse | null>(null); // ✅ 추가
 
-  // ✅ 종목 리스트 fetch
   useEffect(() => {
     fetch('http://localhost:8000/stocks')
       .then((res) => res.json())
@@ -27,15 +36,14 @@ export const ChartWrapper: React.FC = () => {
       .catch((err) => console.error('종목 리스트 불러오기 실패:', err));
   }, []);
 
-  // ✅ 차트 & 요약 데이터 fetch
   useEffect(() => {
     if (symbol) {
       fetchCandles(symbol, timeframe).then(setData);
       fetchStockSummary(symbol).then(setSummary).catch(() => setSummary(null));
+      fetchFinancialRatios(symbol).then(setFinancial).catch(() => setFinancial(null)); // ✅ 추가
     }
   }, [symbol, timeframe]);
 
-  // ✅ 입력값으로 종목 추천
   useEffect(() => {
     if (!inputValue.trim()) {
       setSuggestions([]);
@@ -82,8 +90,14 @@ export const ChartWrapper: React.FC = () => {
     <div style={{ padding: '20px' }}>
       <h2>{displayTitle} 차트</h2>
 
-      {/* ✅ 종목 요약 카드 */}
       <StockSummaryCard data={summary} />
+
+      {/* ✅ 재무비율 카드 */}
+      <FinancialCard data={financial} />
+      {/* ✅ 시각화 형태 1: 게이지 차트 */}
+      <FinancialGauge data={financial} />
+      {/* ✅ 시각화 형태 2: 분기별 추이 막대 그래프 */}
+      <FinancialChart data={financial} />
 
       <div style={{ marginBottom: '10px', position: 'relative' }}>
         <label style={{ marginRight: '10px' }}>
@@ -98,7 +112,6 @@ export const ChartWrapper: React.FC = () => {
         </label>
         <button onClick={handleSearch}>검색</button>
 
-        {/* ✅ 자동완성 종목 추천 */}
         {suggestions.length > 0 && (
           <ul
             style={{

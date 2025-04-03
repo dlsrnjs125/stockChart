@@ -22,6 +22,30 @@ export const fetchStockSummary = async (query: string): Promise<StockSummary> =>
 };
 
 
+export interface FinancialItem {
+  stac_yymm: string;
+  lblt_rate: number;
+  lblt_status: string;
+  bram_depn: number;
+  bram_status: string;
+  crnt_rate: number;
+  crnt_status: string;
+  quck_rate: number;
+  quck_status: string;
+}
+
+export interface FinancialResponse {
+  symbol: string;
+  ratios: FinancialItem[];
+}
+
+export const fetchFinancialRatios = async (query: string): Promise<FinancialResponse> => {
+  const res = await fetch(`http://localhost:8000/stock/financial?query=${query}`);
+  if (!res.ok) throw new Error('재무비율 데이터 조회 실패');
+  return res.json();
+};
+
+
 export async function fetchCandles(
   query: string,
   timeframe: 'daily' | 'weekly' | 'monthly'
