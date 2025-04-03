@@ -18,6 +18,13 @@ export const StockSummaryCard: React.FC<Props> = ({ data }) => {
   const color = isUp ? 'red' : change < 0 ? 'blue' : 'black';
   const sign = isUp ? '+' : change < 0 ? '' : '';
 
+  // ✅ 현재가 대비 색상 반환 함수
+  const getColorByPrice = (target: number) => {
+    if (target > price) return 'red';
+    if (target < price) return 'blue';
+    return 'black';
+  };
+
   const now = new Date();
   const formattedDate = `${now.getFullYear()}-${(now.getMonth() + 1)
     .toString()
@@ -29,7 +36,7 @@ export const StockSummaryCard: React.FC<Props> = ({ data }) => {
   return (
     <div
       style={{
-        position: 'relative', // ✅ 기준점
+        position: 'relative',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -68,13 +75,13 @@ export const StockSummaryCard: React.FC<Props> = ({ data }) => {
         <div>{previous_close.toLocaleString()}</div>
 
         <div style={{ color: '#999' }}>고가</div>
-        <div style={{ color: 'red' }}>{high.toLocaleString()}</div>
+        <div style={{ color: getColorByPrice(high) }}>{high.toLocaleString()}</div>
 
         <div style={{ color: '#999' }}>시가</div>
-        <div style={{ color: 'red' }}>{open.toLocaleString()}</div>
+        <div style={{ color: getColorByPrice(open) }}>{open.toLocaleString()}</div>
 
         <div style={{ color: '#999' }}>저가</div>
-        <div style={{ color: 'red' }}>{low.toLocaleString()}</div>
+        <div style={{ color: getColorByPrice(low) }}>{low.toLocaleString()}</div>
 
         <div style={{ color: '#999' }}>거래량</div>
         <div>{volume.toLocaleString()}</div>
@@ -86,7 +93,7 @@ export const StockSummaryCard: React.FC<Props> = ({ data }) => {
         </div>
       </div>
 
-      {/* ✅ 기준 시각 - 오른쪽 하단 고정 */}
+      {/* 기준 시각 */}
       <div
         style={{
           position: 'absolute',
