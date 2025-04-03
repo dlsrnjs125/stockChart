@@ -1,9 +1,11 @@
 import os
 import requests
 from dotenv import load_dotenv
-from .token_manager import get_access_token
+from core.token_manager import get_access_token
 
 load_dotenv()
+
+# 한국투자증권 API 요청 처리
 
 def fetch_candles(symbol: str, timeframe: str = "daily"):
     token = get_access_token()

@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# 토큰 발급 + 캐싱
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TOKEN_CACHE_FILE = os.path.join(BASE_DIR, "token_cache.json")
 

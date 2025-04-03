@@ -1,21 +1,33 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from .chart_service import get_chart_data
+
+from services.chart_service import get_chart_data
+from utils.stock_lookup import find_symbol
+from routes import stock_list_route  # 👉 종목 리스트 라우트
 
 app = FastAPI()
 
-# 프론트엔드에서 요청 허용
+# ✅ CORS 설정 (Vite 프론트엔드 허용)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # 개발 중이므로 * 허용. 배포 시 도메인 제한 필요
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# ✅ 종목 리스트 라우트 등록 (/stocks)
+app.include_router(stock_list_route.router)
 
+
+# ✅ 차트 데이터 API
 @app.get("/chart/{timeframe}")
-def fetch_chart(symbol: str, timeframe: str = "daily"):
+def fetch_chart(query: str, timeframe: str = "daily"):
     """
-    종목코드(symbol)와 차트 종류(timeframe): daily/weekly/monthly/yearly
+    회사명 또는 종목코드를 받아서 차트 데이터 반환
+    ex) /chart/daily?query=삼성전자 or /chart/weekly?query=005930
     """
+    symbol = find_symbol(query)
+    if not symbol:
+        raise HTTPException(status_code=404, detail="해당 종목을 찾을 수 없습니다.")
     return get_chart_data(symbol, timeframe)

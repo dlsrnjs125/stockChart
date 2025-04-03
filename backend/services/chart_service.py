@@ -1,6 +1,6 @@
 from .kis_api import fetch_candles
 
-
+# fetch_candles + get_chart_data
 def format_chart_output(raw_data: list):
     return [
         {

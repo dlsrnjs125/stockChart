@@ -20,12 +20,12 @@ export const D3CandlestickChart: React.FC<Props> = ({ data, symbol, timeframe })
     const innerHeight = height - margin.top - margin.bottom;
     const volumeHeight = 100;
 
-    // 날짜 파싱
     const parseDate = d3.timeParse('%Y%m%d');
     const candles = data.map((d) => ({
       ...d,
       date: parseDate(d.time)!,
     }));
+
     const svgArea = svg
       .attr('width', width)
       .attr('height', height)
@@ -35,11 +35,11 @@ export const D3CandlestickChart: React.FC<Props> = ({ data, symbol, timeframe })
       .attr('class', 'chart-area')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    svgArea.selectAll('*').remove(); // 내부만 초기화
+    svgArea.selectAll('*').remove();
 
     const x = d3
       .scaleBand()
-      .domain(candles.map((d) => d.date.toString()))
+      .domain(candles.map((d) => d.date.toISOString()))
       .range([0, innerWidth])
       .padding(0.3);
 
@@ -53,18 +53,36 @@ export const D3CandlestickChart: React.FC<Props> = ({ data, symbol, timeframe })
       .domain([0, d3.max(candles, (d) => d.volume)! * 1.2])
       .range([innerHeight, innerHeight - volumeHeight]);
 
-    const xAxis = d3.axisBottom(x).tickFormat((d: any) => {
-      const date = new Date(d);
-      return `${date.getMonth() + 1}/${date.getDate()}`;
-    });
+    // ✅ Y축 격자선
+    svgArea.append('g')
+      .attr('class', 'grid y-grid')
+      .call(
+        d3.axisLeft(y)
+          .tickSize(-innerWidth)
+          .tickFormat(() => '')
+      );
 
+    // ✅ X축 격자선
+    svgArea.append('g')
+      .attr('class', 'grid x-grid')
+      .attr('transform', `translate(0, ${innerHeight - volumeHeight})`)
+      .call(
+        d3.axisBottom(x)
+          .tickSize(-innerHeight + volumeHeight)
+          .tickFormat(() => '')
+      );
+
+    // ✅ 실제 축
     svgArea
       .append('g')
       .attr('transform', `translate(0, ${innerHeight})`)
-      .call(xAxis);
+      .call(d3.axisBottom(x).tickFormat((d: any) => {
+        const date = new Date(d);
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+      }));
 
     svgArea.append('g').call(d3.axisLeft(y));
-    // 이동평균선 (5일)
+
     const sma = candles.map((d, i, arr) => {
       if (i < 4) return null;
       const avg = d3.mean(arr.slice(i - 4, i + 1), (d) => d.close)!;
@@ -72,7 +90,7 @@ export const D3CandlestickChart: React.FC<Props> = ({ data, symbol, timeframe })
     }).filter(Boolean) as { date: Date; value: number }[];
 
     const line = d3.line<{ date: Date; value: number }>()
-      .x((d) => x(d.date.toString())! + x.bandwidth() / 2)
+      .x((d) => x(d.date.toISOString())! + x.bandwidth() / 2)
       .y((d) => y(d.value));
 
     svgArea.append('path')
@@ -82,65 +100,117 @@ export const D3CandlestickChart: React.FC<Props> = ({ data, symbol, timeframe })
       .attr('stroke-width', 2)
       .attr('d', line);
 
-    // 캔들 + 거래량
+    const barGroup = svgArea.append('g').attr('class', 'candles');
     candles.forEach((d) => {
-      const xVal = x(d.date.toString())!;
+      const xVal = x(d.date.toISOString())!;
       const bw = x.bandwidth();
-      const color = d.close > d.open ? '#d62728' : '#2ca02c'; // 상승: 빨강, 하락: 초록
+      const color = d.close > d.open ? '#d62728' : '#2ca02c';
 
-      // 꼬리
-      svgArea.append('line')
+      barGroup.append('line')
         .attr('x1', xVal + bw / 2)
         .attr('x2', xVal + bw / 2)
         .attr('y1', y(d.high))
         .attr('y2', y(d.low))
         .attr('stroke', color);
 
-      // 몸통
-      svgArea.append('rect')
+      barGroup.append('rect')
         .attr('x', xVal)
         .attr('y', y(Math.max(d.open, d.close)))
         .attr('width', bw)
         .attr('height', Math.max(1, Math.abs(y(d.open) - y(d.close))))
         .attr('fill', color);
 
-      // 거래량 바
-      svgArea.append('rect')
+      barGroup.append('rect')
         .attr('x', xVal)
         .attr('y', yVolume(d.volume))
         .attr('width', bw)
         .attr('height', innerHeight - yVolume(d.volume))
         .attr('fill', color)
         .attr('opacity', 0.4);
-
-      // 거래량 텍스트
-      svgArea.append('text')
-        .attr('x', xVal + bw / 2)
-        .attr('y', yVolume(d.volume) - 4)
-        .attr('text-anchor', 'middle')
-        .attr('font-size', '10px')
-        .attr('fill', '#666')
-        .text(`${(d.volume / 1_000_000).toFixed(0)}M`);
     });
-    const tooltip = svg
-      .append('text')
+
+    const crosshairV = svg.append('line')
+      .attr('stroke', '#aaa')
+      .attr('stroke-dasharray', '3,3')
+      .attr('y1', margin.top)
+      .attr('y2', height - margin.bottom)
+      .style('display', 'none');
+
+    const crosshairH = svg.append('line')
+      .attr('stroke', '#aaa')
+      .attr('stroke-dasharray', '3,3')
+      .attr('x1', margin.left)
+      .attr('x2', width - margin.right)
+      .style('display', 'none');
+
+    const tooltipGroup = svg.append('g').style('display', 'none');
+    const tooltipBox = tooltipGroup.append('rect')
+      .attr('width', 160)
+      .attr('height', 100)
+      .attr('rx', 8)
+      .attr('ry', 8)
+      .attr('fill', 'white')
+      .attr('stroke', '#ccc')
+      .attr('opacity', 0.95);
+
+    const tooltipLines = Array.from({ length: 6 }).map((_, i) =>
+      tooltipGroup.append('text')
+        .attr('x', 12)
+        .attr('y', 20 + i * 15)
+        .attr('font-size', i === 0 ? 13 : 12)
+        .attr('font-weight', i === 0 ? 'bold' : 'normal')
+        .attr('fill', '#333')
+    );
+
+    const staticText = svg.append('text')
       .attr('x', 10)
       .attr('y', 15)
-      .attr('fill', 'black')
-      .attr('font-size', 12);
+      .attr('font-size', 12)
+      .attr('fill', 'black');
 
     svg.on('mousemove', function (event) {
-      const [mx] = d3.pointer(event);
-      const index = Math.floor((mx - margin.left) / x.bandwidth());
-      const d = candles[index];
-      if (!d) return;
-
-      tooltip.text(
-        `📅 ${d3.timeFormat('%Y-%m-%d')(d.date)} | 시: ${d.open.toLocaleString()} 고: ${d.high.toLocaleString()} 저: ${d.low.toLocaleString()} 종: ${d.close.toLocaleString()} 거래량: ${(d.volume / 1_000_000).toFixed(1)}M`
+      const [mx, my] = d3.pointer(event);
+      const dateToX = new Map(candles.map((d) => [d.date.toISOString(), x(d.date.toISOString())!]));
+      const closest = d3.least(candles, (d) =>
+        Math.abs((dateToX.get(d.date.toISOString()) ?? 0) + x.bandwidth() / 2 - (mx - margin.left))
       );
+
+      if (!closest) return;
+
+      const dx = dateToX.get(closest.date.toISOString())!;
+      const xPos = dx + x.bandwidth() / 2 + margin.left;
+
+      const tooltipWidth = 160;
+      const tooltipOffset = 10;
+      const showLeft = xPos + tooltipWidth + tooltipOffset > width;
+      const tooltipX = showLeft ? xPos - tooltipWidth - tooltipOffset : xPos + tooltipOffset;
+
+      tooltipGroup
+        .style('display', null)
+        .attr('transform', `translate(${tooltipX},${my - 60})`);
+
+      tooltipLines[0].text(`📅 ${d3.timeFormat('%Y-%m-%d')(closest.date)}`);
+      tooltipLines[1].text(`시: ${closest.open.toLocaleString()}`);
+      tooltipLines[2].text(`고: ${closest.high.toLocaleString()}`);
+      tooltipLines[3].text(`저: ${closest.low.toLocaleString()}`);
+      tooltipLines[4].text(`종: ${closest.close.toLocaleString()}`);
+      tooltipLines[5].text(`거래량: ${(closest.volume / 1_000_000).toFixed(1)}M`);
+
+      staticText.text(
+        `📅 ${d3.timeFormat('%Y-%m-%d')(closest.date)} | 시: ${closest.open.toLocaleString()} 고: ${closest.high.toLocaleString()} 저: ${closest.low.toLocaleString()} 종: ${closest.close.toLocaleString()} 거래량: ${(closest.volume / 1_000_000).toFixed(1)}M`
+      );
+
+      crosshairV.attr('x1', xPos).attr('x2', xPos).style('display', null);
+      crosshairH.attr('y1', my).attr('y2', my).style('display', null);
     });
 
-    // Zoom 기능 (축소 확대)
+    svg.on('mouseleave', () => {
+      tooltipGroup.style('display', 'none');
+      crosshairV.style('display', 'none');
+      crosshairH.style('display', 'none');
+      staticText.text('');
+    });
+
     svg.call(
       d3.zoom<SVGSVGElement, unknown>()
         .scaleExtent([1, 5])
@@ -151,5 +221,21 @@ export const D3CandlestickChart: React.FC<Props> = ({ data, symbol, timeframe })
     );
   }, [data]);
 
-  return <svg ref={ref}></svg>;
+  return (
+    <>
+      <style>
+        {`
+          .grid line {
+            stroke: #aaa;
+            stroke-opacity: 0.2;
+            shape-rendering: crispEdges;
+          }
+          .grid path {
+            display: none;
+          }
+        `}
+      </style>
+      <svg ref={ref}></svg>
+    </>
+  );
 };
