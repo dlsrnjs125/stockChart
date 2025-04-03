@@ -11,35 +11,37 @@ interface Props {
   data: FinancialResponse | null;
 }
 
-const makeGaugeData = (label: string, value: number) => {
-  return [
-    { name: label, value, fill: getColor(value) },
-  ];
-};
-
 const getColor = (value: number) => {
   if (value <= 100) return '#69B34C';   // 좋음
   if (value <= 200) return '#F9C80E';   // 보통
   return '#FF4E42';                     // 위험
 };
 
+const makeGaugeData = (label: string, value: number) => [
+  { name: label, value, fill: getColor(value) },
+];
+
 export const FinancialGauge: React.FC<Props> = ({ data }) => {
-  if (!data) return null;
+  if (!data || data.ratios.length === 0) return null;
+
   const latest = data.ratios[0];
 
+  // ✅ 유효한 데이터만 필터링
   const items = [
     { label: '부채비율', value: latest.lblt_rate },
     { label: '고정비율', value: latest.bram_depn },
     { label: '유동비율', value: latest.crnt_rate },
     { label: '당좌비율', value: latest.quck_rate },
-  ];
+  ].filter((item) => item.value !== null && item.value !== undefined);
+
+  if (items.length === 0) return null;
 
   return (
     <div style={{ marginBottom: 24 }}>
       <h3>📍 주요 비율 시각화 (게이지 차트)</h3>
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
+        gridTemplateColumns: `repeat(${items.length}, 1fr)`,
         gap: 20,
         maxWidth: 900,
       }}>
@@ -54,7 +56,6 @@ export const FinancialGauge: React.FC<Props> = ({ data }) => {
                 startAngle={180}
                 endAngle={0}
               >
-                {/* ✅ tick 속성 안전하게 제거 */}
                 {/* @ts-ignore */}
                 <PolarAngleAxis
                   type="number"

@@ -3,15 +3,20 @@ import {
   fetchCandles,
   fetchStockSummary,
   fetchFinancialRatios,
+  fetchProfitabilityRatios,
   StockSummary,
-  FinancialResponse
+  FinancialResponse,
+  ProfitabilityResponse,
 } from '../api/stockApi';
 import { StockCandle } from '../types/stock';
 import { D3CandlestickChart } from './D3CandlestickChart';
 import { StockSummaryCard } from './StockSummaryCard';
-import { FinancialCard } from './FinancialCardText'; // ✅ 추가
+import { FinancialCard } from './FinancialCardText';
 import { FinancialChart } from './FinancialChart';
 import { FinancialGauge } from './FinancialGauge';
+import { ProfitabilityCard } from './ProfitabilityCard';
+import { ProfitabilityChart } from './ProfitabilityChart';
+import { ProfitabilityGauge } from './ProfitabilityGauge';
 
 interface StockInfo {
   회사명: string;
@@ -27,7 +32,8 @@ export const ChartWrapper: React.FC = () => {
   const [stockList, setStockList] = useState<StockInfo[]>([]);
   const [suggestions, setSuggestions] = useState<StockInfo[]>([]);
   const [summary, setSummary] = useState<StockSummary | null>(null);
-  const [financial, setFinancial] = useState<FinancialResponse | null>(null); // ✅ 추가
+  const [financial, setFinancial] = useState<FinancialResponse | null>(null);
+  const [profitability, setProfitability] = useState<ProfitabilityResponse | null>(null);
 
   useEffect(() => {
     fetch('http://localhost:8000/stocks')
@@ -40,9 +46,22 @@ export const ChartWrapper: React.FC = () => {
     if (symbol) {
       fetchCandles(symbol, timeframe).then(setData);
       fetchStockSummary(symbol).then(setSummary).catch(() => setSummary(null));
-      fetchFinancialRatios(symbol).then(setFinancial).catch(() => setFinancial(null)); // ✅ 추가
+      fetchFinancialRatios(symbol).then(setFinancial).catch(() => setFinancial(null));
+      fetchProfitabilityRatios(symbol).then(setProfitability).catch(() => setProfitability(null));
     }
   }, [symbol, timeframe]);
+
+  useEffect(() => {
+    if (symbol) {
+      fetchProfitabilityRatios(symbol).then((res) => {
+        console.log('✅ 수익성 데이터:', res);
+        setProfitability(res);
+      }).catch((err) => {
+        console.error('❌ 수익성 비율 에러:', err);
+        setProfitability(null);
+      });
+    }
+    }, [symbol]);
 
   useEffect(() => {
     if (!inputValue.trim()) {
@@ -92,12 +111,15 @@ export const ChartWrapper: React.FC = () => {
 
       <StockSummaryCard data={summary} />
 
-      {/* ✅ 재무비율 카드 */}
+      {/* ✅ 재무 안정성 비율 */}
       <FinancialCard data={financial} />
-      {/* ✅ 시각화 형태 1: 게이지 차트 */}
       <FinancialGauge data={financial} />
-      {/* ✅ 시각화 형태 2: 분기별 추이 막대 그래프 */}
       <FinancialChart data={financial} />
+
+      {/* ✅ 수익성 비율 */}
+      <ProfitabilityCard data={profitability} />
+      <ProfitabilityGauge data={profitability} />
+      <ProfitabilityChart data={profitability} />
 
       <div style={{ marginBottom: '10px', position: 'relative' }}>
         <label style={{ marginRight: '10px' }}>

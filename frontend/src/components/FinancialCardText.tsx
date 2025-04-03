@@ -5,11 +5,11 @@ interface Props {
   data: FinancialResponse | null;
 }
 
-const statusColor = {
+const statusColor: Record<string, string> = {
   좋음: '#2ca02c',
   보통: '#ff9800',
   위험: '#d62728',
-  '정보 없음': '#999'
+  '정보 없음': '#999',
 };
 
 export const FinancialCard: React.FC<Props> = ({ data }) => {
@@ -17,12 +17,18 @@ export const FinancialCard: React.FC<Props> = ({ data }) => {
 
   const latest = data.ratios[0]; // 최신 분기
 
-  const itemStyle = {
+  const format = (val: number | null | undefined): string =>
+    val !== null && val !== undefined ? `${val.toFixed(2)}%` : '정보 없음';
+
+  const getStatusColor = (status: string | null | undefined): string =>
+    statusColor[status ?? '정보 없음'] ?? statusColor['정보 없음'];
+
+  const itemStyle: React.CSSProperties = {
     padding: '8px 12px',
     borderRadius: 8,
     background: '#fff',
     boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-    fontSize: 14
+    fontSize: 14,
   };
 
   return (
@@ -41,31 +47,39 @@ export const FinancialCard: React.FC<Props> = ({ data }) => {
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: 16
+          gap: 16,
         }}
       >
         <div style={itemStyle}>
           <div style={{ fontWeight: 'bold', marginBottom: 4 }}>부채비율</div>
-          <div>{latest.lblt_rate.toFixed(2)}%</div>
-          <div style={{ color: statusColor[latest.lblt_status] }}>{latest.lblt_status}</div>
+          <div>{format(latest.lblt_rate)}</div>
+          <div style={{ color: getStatusColor(latest.lblt_status) }}>
+            {latest.lblt_status ?? '정보 없음'}
+          </div>
         </div>
 
         <div style={itemStyle}>
           <div style={{ fontWeight: 'bold', marginBottom: 4 }}>고정비율</div>
-          <div>{latest.bram_depn.toFixed(2)}%</div>
-          <div style={{ color: statusColor[latest.bram_status] }}>{latest.bram_status}</div>
+          <div>{format(latest.bram_depn)}</div>
+          <div style={{ color: getStatusColor(latest.bram_status) }}>
+            {latest.bram_status ?? '정보 없음'}
+          </div>
         </div>
 
         <div style={itemStyle}>
           <div style={{ fontWeight: 'bold', marginBottom: 4 }}>유동비율</div>
-          <div>{latest.crnt_rate.toFixed(2)}%</div>
-          <div style={{ color: statusColor[latest.crnt_status] }}>{latest.crnt_status}</div>
+          <div>{format(latest.crnt_rate)}</div>
+          <div style={{ color: getStatusColor(latest.crnt_status) }}>
+            {latest.crnt_status ?? '정보 없음'}
+          </div>
         </div>
 
         <div style={itemStyle}>
           <div style={{ fontWeight: 'bold', marginBottom: 4 }}>당좌비율</div>
-          <div>{latest.quck_rate.toFixed(2)}%</div>
-          <div style={{ color: statusColor[latest.quck_status] }}>{latest.quck_status}</div>
+          <div>{format(latest.quck_rate)}</div>
+          <div style={{ color: getStatusColor(latest.quck_status) }}>
+            {latest.quck_status ?? '정보 없음'}
+          </div>
         </div>
       </div>
     </div>

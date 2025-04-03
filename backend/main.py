@@ -5,7 +5,8 @@ from services.chart_service import get_chart_data
 from utils.stock_lookup import find_symbol
 from routes import stock_list_route  # 👉 종목 리스트 라우트
 from routes import stock_summary_route # 주식 최소 정보카드
-from routes import financial_route # 주식 제무제표 기준 리스크 분석1
+from routes import financial_route # 주식 제무제표 기준 리스크 분석(안정성 비율)
+from routes import profitability_route # 주식 제무제표 기준 리스크 분석(수익성 비율)
 
 
 app = FastAPI()
@@ -23,6 +24,7 @@ app.add_middleware(
 app.include_router(stock_list_route.router)
 app.include_router(financial_route.router)
 app.include_router(stock_summary_route.router)
+app.include_router(profitability_route.router)
 
 
 # ✅ 차트 데이터 API

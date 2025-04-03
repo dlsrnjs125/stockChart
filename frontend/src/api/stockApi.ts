@@ -58,3 +58,23 @@ export async function fetchCandles(
     return [];
   }
 }
+
+
+export interface ProfitabilityItem {
+  stac_yymm: string;
+  roe: number;
+  roa: number;
+  operating_margin: number;
+  net_margin: number;
+}
+
+export interface ProfitabilityResponse {
+  symbol: string;
+  ratios: ProfitabilityItem[];
+}
+
+export const fetchProfitabilityRatios = async (query: string): Promise<ProfitabilityResponse> => {
+  const res = await fetch(`http://localhost:8000/stock/profitability?query=${query}`);
+  if (!res.ok) throw new Error('수익성 비율 조회 실패');
+  return res.json();
+};
