@@ -78,3 +78,33 @@ export const fetchProfitabilityRatios = async (query: string): Promise<Profitabi
   if (!res.ok) throw new Error('수익성 비율 조회 실패');
   return res.json();
 };
+
+export interface VolatilityResponse {
+  symbol: string;
+  volatility_score: number;
+  raw_data: {
+    prdy_ctrt: string;
+    prdy_vrss_vol_rate: string;
+    w52_hgpr_vrss_prpr_ctrt: string;
+    vol_tnrt: string;
+  };
+}
+
+export const fetchVolatility = async (query: string): Promise<VolatilityResponse> => {
+  const res = await fetch(`http://localhost:8000/stock/volatility?query=${query}`);
+  if (!res.ok) throw new Error('변동성 점수 조회 실패');
+  return res.json();
+};
+
+export interface VolatilityHistoryItem {
+  stac_yymm: string;
+  prdy_ctrt: string;
+  prdy_vrss_vol_rate: string;
+  w52_hgpr_vrss_prpr_ctrt: string;
+  vol_tnrt: string;
+}
+
+export interface VolatilityHistoryResponse {
+  symbol: string;
+  history: VolatilityHistoryItem[];
+}

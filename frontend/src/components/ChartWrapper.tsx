@@ -4,9 +4,11 @@ import {
   fetchStockSummary,
   fetchFinancialRatios,
   fetchProfitabilityRatios,
+  fetchVolatility, // ✅ 추가
   StockSummary,
   FinancialResponse,
   ProfitabilityResponse,
+  VolatilityResponse, // ✅ 추가
 } from '../api/stockApi';
 import { StockCandle } from '../types/stock';
 import { D3CandlestickChart } from './D3CandlestickChart';
@@ -17,6 +19,8 @@ import { FinancialGauge } from './FinancialGauge';
 import { ProfitabilityCard } from './ProfitabilityCard';
 import { ProfitabilityChart } from './ProfitabilityChart';
 import { ProfitabilityGauge } from './ProfitabilityGauge';
+import { VolatilityGauge } from './VolatilityGauge'; // ✅ 추가
+import { VolatilityCard } from './VolatilityCard';   // ✅ 추가
 
 interface StockInfo {
   회사명: string;
@@ -34,6 +38,7 @@ export const ChartWrapper: React.FC = () => {
   const [summary, setSummary] = useState<StockSummary | null>(null);
   const [financial, setFinancial] = useState<FinancialResponse | null>(null);
   const [profitability, setProfitability] = useState<ProfitabilityResponse | null>(null);
+  const [volatility, setVolatility] = useState<VolatilityResponse | null>(null); // ✅ 추가
 
   useEffect(() => {
     fetch('http://localhost:8000/stocks')
@@ -48,6 +53,7 @@ export const ChartWrapper: React.FC = () => {
       fetchStockSummary(symbol).then(setSummary).catch(() => setSummary(null));
       fetchFinancialRatios(symbol).then(setFinancial).catch(() => setFinancial(null));
       fetchProfitabilityRatios(symbol).then(setProfitability).catch(() => setProfitability(null));
+      fetchVolatility(symbol).then(setVolatility).catch(() => setVolatility(null)); // ✅ 추가
     }
   }, [symbol, timeframe]);
 
@@ -61,7 +67,7 @@ export const ChartWrapper: React.FC = () => {
         setProfitability(null);
       });
     }
-    }, [symbol]);
+  }, [symbol]);
 
   useEffect(() => {
     if (!inputValue.trim()) {
@@ -165,7 +171,16 @@ export const ChartWrapper: React.FC = () => {
           </select>
         </label>
       </div>
+
       <D3CandlestickChart data={data} symbol={symbol} timeframe={timeframe} />
+
+      {/* ✅ 변동성 점수 */}
+      {volatility && (
+        <>
+          <VolatilityCard data={volatility.raw_data} />
+          <VolatilityGauge score={volatility.volatility_score} />
+        </>
+      )}
 
       {/* ✅ 재무 안정성 비율 */}
       <FinancialCard data={financial} />
