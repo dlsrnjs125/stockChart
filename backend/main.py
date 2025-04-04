@@ -1,12 +1,12 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from services.chart_service import get_chart_data
-from utils.stock_lookup import find_symbol
-from routes import stock_list_route  # 👉 종목 리스트 라우트
-from routes import stock_summary_route # 주식 최소 정보카드
-from routes import financial_route # 주식 제무제표 기준 리스크 분석(안정성 비율)
-from routes import profitability_route # 주식 제무제표 기준 리스크 분석(수익성 비율)
+from .services.chart_service import get_chart_data
+from .utils.stock_lookup import find_symbol
+from .routes import stock_list_route  # 👉 종목 리스트 라우트
+from .routes import stock_summary_route # 주식 최소 정보카드
+from .routes import financial_route # 주식 제무제표 기준 리스크 분석(안정성 비율)
+from .routes import profitability_route # 주식 제무제표 기준 리스크 분석(수익성 비율)
 
 
 app = FastAPI()
@@ -15,7 +15,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # 개발 중이므로 * 허용. 배포 시 도메인 제한 필요
-    allow_credentials=True,
+    allow_credentials=True, 
     allow_methods=["*"],
     allow_headers=["*"],
 )

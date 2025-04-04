@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query, HTTPException
-from utils.stock_lookup import find_symbol
-from services.financial_service import get_financial_ratios
+from ..utils.stock_lookup import find_symbol
+from ..services.financial_service import get_financial_ratios
 
 router = APIRouter()
 

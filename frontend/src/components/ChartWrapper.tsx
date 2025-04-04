@@ -110,17 +110,6 @@ export const ChartWrapper: React.FC = () => {
       <h2>{displayTitle} 차트</h2>
 
       <StockSummaryCard data={summary} />
-
-      {/* ✅ 재무 안정성 비율 */}
-      <FinancialCard data={financial} />
-      <FinancialGauge data={financial} />
-      <FinancialChart data={financial} />
-
-      {/* ✅ 수익성 비율 */}
-      <ProfitabilityCard data={profitability} />
-      <ProfitabilityGauge data={profitability} />
-      <ProfitabilityChart data={profitability} />
-
       <div style={{ marginBottom: '10px', position: 'relative' }}>
         <label style={{ marginRight: '10px' }}>
           종목 검색:
@@ -176,8 +165,17 @@ export const ChartWrapper: React.FC = () => {
           </select>
         </label>
       </div>
-
       <D3CandlestickChart data={data} symbol={symbol} timeframe={timeframe} />
+
+      {/* ✅ 재무 안정성 비율 */}
+      <FinancialCard data={financial} />
+      <FinancialGauge data={financial} />
+      <FinancialChart data={financial} />
+
+      {/* ✅ 수익성 비율 */}
+      <ProfitabilityCard data={profitability} />
+      <ProfitabilityGauge data={profitability} />
+      <ProfitabilityChart data={profitability} />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query, HTTPException
-from services.quote_service import get_stock_summary
-from utils.stock_lookup import find_symbol  # query → 종목코드 매핑
+from ..services.quote_service import get_stock_summary
+from ..utils.stock_lookup import find_symbol  # query → 종목코드 매핑
 
 router = APIRouter()
 

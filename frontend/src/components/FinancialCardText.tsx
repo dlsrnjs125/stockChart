@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FinancialResponse } from '../api/stockApi';
 
 interface Props {
@@ -12,10 +12,23 @@ const statusColor: Record<string, string> = {
   '정보 없음': '#999',
 };
 
+const ratioDescriptions: Record<string, string> = {
+  부채비율:
+    '총자산 대비 총부채의 비율로, 기업의 재무 건전성을 나타냅니다. 일반적으로 200% 이하가 바람직합니다.',
+  고정비율:
+    '자기자본 대비 고정자산의 비율로, 장기적인 안정성을 보여줍니다. 낮을수록 유동성 확보에 유리합니다.',
+  유동비율:
+    '유동자산 대비 유동부채의 비율로, 단기 지급능력을 나타냅니다. 일반적으로 100% 이상이 이상적입니다.',
+  당좌비율:
+    '유동비율 중 재고자산을 제외한 당좌자산 대비 유동부채 비율입니다. 보다 보수적인 단기 지급능력 지표입니다.',
+};
+
 export const FinancialCard: React.FC<Props> = ({ data }) => {
+  const [visibleTooltip, setVisibleTooltip] = useState<string | null>(null);
+
   if (!data || data.ratios.length === 0) return null;
 
-  const latest = data.ratios[0]; // 최신 분기
+  const latest = data.ratios[0];
 
   const format = (val: number | null | undefined): string =>
     val !== null && val !== undefined ? `${val.toFixed(2)}%` : '정보 없음';
@@ -24,12 +37,62 @@ export const FinancialCard: React.FC<Props> = ({ data }) => {
     statusColor[status ?? '정보 없음'] ?? statusColor['정보 없음'];
 
   const itemStyle: React.CSSProperties = {
+    position: 'relative',
     padding: '8px 12px',
     borderRadius: 8,
     background: '#fff',
     boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
     fontSize: 14,
   };
+
+  const tooltipStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: 30,
+    left: 0,
+    zIndex: 10,
+    background: '#333',
+    color: '#fff',
+    padding: '8px 12px',
+    borderRadius: 6,
+    fontSize: 12,
+    maxWidth: 240,
+    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+  };
+
+  const infoIconStyle: React.CSSProperties = {
+    marginLeft: 6,
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    color: '#888',
+  };
+
+  const renderCard = (
+    label: string,
+    value: number | null | undefined,
+    status: string | null | undefined
+  ) => (
+    <div style={itemStyle}>
+      <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
+        {label}
+        <span
+          style={infoIconStyle}
+          onClick={() =>
+            setVisibleTooltip(visibleTooltip === label ? null : label)
+          }
+          title="설명 보기"
+        >
+          ℹ️
+        </span>
+        {visibleTooltip === label && (
+          <div style={tooltipStyle}>{ratioDescriptions[label]}</div>
+        )}
+      </div>
+      <div>{format(value)}</div>
+      <div style={{ color: getStatusColor(status) }}>
+        {status ?? '정보 없음'}
+      </div>
+    </div>
+  );
 
   return (
     <div
@@ -50,37 +113,10 @@ export const FinancialCard: React.FC<Props> = ({ data }) => {
           gap: 16,
         }}
       >
-        <div style={itemStyle}>
-          <div style={{ fontWeight: 'bold', marginBottom: 4 }}>부채비율</div>
-          <div>{format(latest.lblt_rate)}</div>
-          <div style={{ color: getStatusColor(latest.lblt_status) }}>
-            {latest.lblt_status ?? '정보 없음'}
-          </div>
-        </div>
-
-        <div style={itemStyle}>
-          <div style={{ fontWeight: 'bold', marginBottom: 4 }}>고정비율</div>
-          <div>{format(latest.bram_depn)}</div>
-          <div style={{ color: getStatusColor(latest.bram_status) }}>
-            {latest.bram_status ?? '정보 없음'}
-          </div>
-        </div>
-
-        <div style={itemStyle}>
-          <div style={{ fontWeight: 'bold', marginBottom: 4 }}>유동비율</div>
-          <div>{format(latest.crnt_rate)}</div>
-          <div style={{ color: getStatusColor(latest.crnt_status) }}>
-            {latest.crnt_status ?? '정보 없음'}
-          </div>
-        </div>
-
-        <div style={itemStyle}>
-          <div style={{ fontWeight: 'bold', marginBottom: 4 }}>당좌비율</div>
-          <div>{format(latest.quck_rate)}</div>
-          <div style={{ color: getStatusColor(latest.quck_status) }}>
-            {latest.quck_status ?? '정보 없음'}
-          </div>
-        </div>
+        {renderCard('부채비율', latest.lblt_rate, latest.lblt_status)}
+        {renderCard('고정비율', latest.bram_depn, latest.bram_status)}
+        {renderCard('유동비율', latest.crnt_rate, latest.crnt_status)}
+        {renderCard('당좌비율', latest.quck_rate, latest.quck_status)}
       </div>
     </div>
   );
