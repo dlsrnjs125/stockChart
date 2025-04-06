@@ -20,22 +20,25 @@ export const fetchStockSummary = async (query: string): Promise<StockSummary> =>
   return data;
 };
 
-// ✅ 재무 안정성 비율
-export interface FinancialItem {
-  stac_yymm: string;
-  lblt_rate: number;
-  lblt_status: string;
-  bram_depn: number;
-  bram_status: string;
-  crnt_rate: number;
-  crnt_status: string;
-  quck_rate: number;
-  quck_status: string;
+// ✅ 재무 안정성 점수
+export interface FinancialMetric {
+  label: string;
+  value: number;
+  score: number;
 }
 
 export interface FinancialResponse {
   symbol: string;
-  ratios: FinancialItem[];
+  stability_score: number;
+  report_date: string;
+  risk_level: string;
+  raw_data: {
+    lblt_rate: number;
+    bram_depn: number;
+    crnt_rate: number;
+    quck_rate: number;
+  };
+  score_details: FinancialMetric[];
 }
 
 export const fetchFinancialRatios = async (query: string): Promise<FinancialResponse> => {
@@ -93,7 +96,7 @@ export interface VolatilityResponse {
     w52_hgpr_vrss_prpr_ctrt: string;
     vol_tnrt: string;
   };
-  score_details: VolatilityMetric[]; // ✅ 각 지표별 점수 추가됨
+  score_details: VolatilityMetric[];
 }
 
 export const fetchVolatility = async (query: string): Promise<VolatilityResponse> => {

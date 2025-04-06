@@ -18,9 +18,10 @@ import { StockSummaryCard } from './StockSummaryCard';
 import { VolatilityGauge } from './VolatilityGauge';
 import { VolatilityRiskOverview } from './VolatilityRiskOverview';
 import { SupplyRiskGauge } from './SupplyRiskGauge';
-import { FinancialOverview } from './FinancialOverview';
 import { SupplyRiskOverview } from './SupplyRiskOverview';
 import { ProfitabilityOverview } from './ProfitabilityOverview';
+import { StabilityRiskOverview } from './StabilityRiskOverview';
+import { StabilityGauge } from './StabilityGauge';
 
 interface StockInfo {
   회사명: string;
@@ -186,8 +187,15 @@ export const ChartWrapper: React.FC = () => {
         </div>
       )}
 
-      {/* ✅ 재무 안정성 비율 */}
-      <FinancialOverview data={financial} />
+      {/* ✅ 재무 안정성 점수 */}
+      {financial && financial.score_details && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+          <StabilityRiskOverview data={financial.score_details} />
+          <div style={{ gridColumn: '1 / -1' }}>
+            <StabilityGauge score={financial.stability_score} />
+          </div>
+        </div>
+      )}
 
       {/* ✅ 수익성 비율 */}
       <ProfitabilityOverview data={profitability} />
