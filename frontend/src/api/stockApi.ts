@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { StockCandle } from '../types/stock';
 
-// src/api/stockApi.ts
+// ✅ 종목 요약 정보
 export interface StockSummary {
   symbol: string;
   price: number;
@@ -16,12 +16,11 @@ export interface StockSummary {
 }
 
 export const fetchStockSummary = async (query: string): Promise<StockSummary> => {
-  const res = await fetch(`http://localhost:8000/stock/summary?query=${query}`);
-  if (!res.ok) throw new Error('요약 정보 조회 실패');
-  return res.json();
+  const { data } = await axios.get(`http://localhost:8000/stock/summary?query=${query}`);
+  return data;
 };
 
-
+// ✅ 재무 안정성 비율
 export interface FinancialItem {
   stac_yymm: string;
   lblt_rate: number;
@@ -45,7 +44,7 @@ export const fetchFinancialRatios = async (query: string): Promise<FinancialResp
   return res.json();
 };
 
-
+// ✅ 캔들 차트 데이터
 export async function fetchCandles(
   query: string,
   timeframe: 'daily' | 'weekly' | 'monthly'
@@ -59,7 +58,7 @@ export async function fetchCandles(
   }
 }
 
-
+// ✅ 수익성 비율
 export interface ProfitabilityItem {
   stac_yymm: string;
   roe: number;
@@ -79,6 +78,12 @@ export const fetchProfitabilityRatios = async (query: string): Promise<Profitabi
   return res.json();
 };
 
+// ✅ 변동성 점수
+export interface VolatilityMetric {
+  label: string;
+  value: number;
+}
+
 export interface VolatilityResponse {
   symbol: string;
   volatility_score: number;
@@ -88,6 +93,7 @@ export interface VolatilityResponse {
     w52_hgpr_vrss_prpr_ctrt: string;
     vol_tnrt: string;
   };
+  score_details: VolatilityMetric[]; // ✅ 각 지표별 점수 추가됨
 }
 
 export const fetchVolatility = async (query: string): Promise<VolatilityResponse> => {
@@ -96,15 +102,22 @@ export const fetchVolatility = async (query: string): Promise<VolatilityResponse
   return res.json();
 };
 
-export interface VolatilityHistoryItem {
-  stac_yymm: string;
-  prdy_ctrt: string;
-  prdy_vrss_vol_rate: string;
-  w52_hgpr_vrss_prpr_ctrt: string;
-  vol_tnrt: string;
+// ✅ 수급 리스크 점수 (Radar 차트)
+export interface SupplyMetric {
+  label: string;
+  score: number;
+  max: number;
 }
 
-export interface VolatilityHistoryResponse {
+export interface SupplyRiskResponse {
   symbol: string;
-  history: VolatilityHistoryItem[];
+  risk_score: number;
+  risk_level: string;
+  score_details: SupplyMetric[];
 }
+
+export const fetchSupplyRisk = async (query: string): Promise<SupplyRiskResponse> => {
+  const res = await fetch(`http://localhost:8000/stock/supply-risk?query=${query}`);
+  if (!res.ok) throw new Error('수급 리스크 점수 조회 실패');
+  return res.json();
+};

@@ -4,23 +4,23 @@ import {
   fetchStockSummary,
   fetchFinancialRatios,
   fetchProfitabilityRatios,
-  fetchVolatility, // ✅ 추가
+  fetchVolatility,
+  fetchSupplyRisk,
   StockSummary,
   FinancialResponse,
   ProfitabilityResponse,
-  VolatilityResponse, // ✅ 추가
+  VolatilityResponse,
+  SupplyRiskResponse,
 } from '../api/stockApi';
 import { StockCandle } from '../types/stock';
 import { D3CandlestickChart } from './D3CandlestickChart';
 import { StockSummaryCard } from './StockSummaryCard';
-import { FinancialCard } from './FinancialCardText';
-import { FinancialChart } from './FinancialChart';
-import { FinancialGauge } from './FinancialGauge';
-import { ProfitabilityCard } from './ProfitabilityCard';
-import { ProfitabilityChart } from './ProfitabilityChart';
-import { ProfitabilityGauge } from './ProfitabilityGauge';
-import { VolatilityGauge } from './VolatilityGauge'; // ✅ 추가
-import { VolatilityCard } from './VolatilityCard';   // ✅ 추가
+import { VolatilityGauge } from './VolatilityGauge';
+import { VolatilityRiskOverview } from './VolatilityRiskOverview';
+import { SupplyRiskGauge } from './SupplyRiskGauge';
+import { FinancialOverview } from './FinancialOverview';
+import { SupplyRiskOverview } from './SupplyRiskOverview';
+import { ProfitabilityOverview } from './ProfitabilityOverview';
 
 interface StockInfo {
   회사명: string;
@@ -38,7 +38,8 @@ export const ChartWrapper: React.FC = () => {
   const [summary, setSummary] = useState<StockSummary | null>(null);
   const [financial, setFinancial] = useState<FinancialResponse | null>(null);
   const [profitability, setProfitability] = useState<ProfitabilityResponse | null>(null);
-  const [volatility, setVolatility] = useState<VolatilityResponse | null>(null); // ✅ 추가
+  const [volatility, setVolatility] = useState<VolatilityResponse | null>(null);
+  const [supplyRisk, setSupplyRisk] = useState<SupplyRiskResponse | null>(null);
 
   useEffect(() => {
     fetch('http://localhost:8000/stocks')
@@ -53,21 +54,10 @@ export const ChartWrapper: React.FC = () => {
       fetchStockSummary(symbol).then(setSummary).catch(() => setSummary(null));
       fetchFinancialRatios(symbol).then(setFinancial).catch(() => setFinancial(null));
       fetchProfitabilityRatios(symbol).then(setProfitability).catch(() => setProfitability(null));
-      fetchVolatility(symbol).then(setVolatility).catch(() => setVolatility(null)); // ✅ 추가
+      fetchVolatility(symbol).then(setVolatility).catch(() => setVolatility(null));
+      fetchSupplyRisk(symbol).then(setSupplyRisk).catch(() => setSupplyRisk(null));
     }
   }, [symbol, timeframe]);
-
-  useEffect(() => {
-    if (symbol) {
-      fetchProfitabilityRatios(symbol).then((res) => {
-        console.log('✅ 수익성 데이터:', res);
-        setProfitability(res);
-      }).catch((err) => {
-        console.error('❌ 수익성 비율 에러:', err);
-        setProfitability(null);
-      });
-    }
-  }, [symbol]);
 
   useEffect(() => {
     if (!inputValue.trim()) {
@@ -116,6 +106,7 @@ export const ChartWrapper: React.FC = () => {
       <h2>{displayTitle} 차트</h2>
 
       <StockSummaryCard data={summary} />
+
       <div style={{ marginBottom: '10px', position: 'relative' }}>
         <label style={{ marginRight: '10px' }}>
           종목 검색:
@@ -125,6 +116,7 @@ export const ChartWrapper: React.FC = () => {
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="예: 대한항공 또는 003490"
             style={{ marginLeft: 10 }}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
           />
         </label>
         <button onClick={handleSearch}>검색</button>
@@ -175,22 +167,30 @@ export const ChartWrapper: React.FC = () => {
       <D3CandlestickChart data={data} symbol={symbol} timeframe={timeframe} />
 
       {/* ✅ 변동성 점수 */}
-      {volatility && (
-        <>
-          <VolatilityCard data={volatility.raw_data} />
-          <VolatilityGauge score={volatility.volatility_score} />
-        </>
+      {volatility && volatility.score_details && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+          <VolatilityRiskOverview data={volatility.score_details} />
+          <div style={{ gridColumn: '1 / -1' }}>
+            <VolatilityGauge score={volatility.volatility_score} />
+          </div>
+        </div>
+      )}
+
+      {/* ✅ 수급 리스크 점수 */}
+      {supplyRisk && supplyRisk.score_details && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+          <SupplyRiskOverview data={supplyRisk.score_details} />
+          <div style={{ gridColumn: '1 / -1' }}>
+            <SupplyRiskGauge score={supplyRisk.risk_score} />
+          </div>
+        </div>
       )}
 
       {/* ✅ 재무 안정성 비율 */}
-      <FinancialCard data={financial} />
-      <FinancialGauge data={financial} />
-      <FinancialChart data={financial} />
+      <FinancialOverview data={financial} />
 
       {/* ✅ 수익성 비율 */}
-      <ProfitabilityCard data={profitability} />
-      <ProfitabilityGauge data={profitability} />
-      <ProfitabilityChart data={profitability} />
+      <ProfitabilityOverview data={profitability} />
     </div>
   );
 };

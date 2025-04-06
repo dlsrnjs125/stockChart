@@ -34,7 +34,7 @@ export const FinancialChart: React.FC<Props> = ({ data }) => {
 
   return (
     <div style={{ marginBottom: 24, maxWidth: 900 }}>
-      <h3>📊 분기별 재무비율 변화</h3>
+      <h3>📊 분기별 안정성 비율 변화</h3>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={filtered}>
           <XAxis dataKey="stac_yymm" />

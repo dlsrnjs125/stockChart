@@ -1,4 +1,10 @@
 import React, { useState } from 'react';
+import {
+  RadialBarChart,
+  RadialBar,
+  PolarAngleAxis,
+  ResponsiveContainer,
+} from 'recharts';
 import { ProfitabilityResponse } from '../api/stockApi';
 
 interface Props {
@@ -33,7 +39,7 @@ const getStatus = (key: string, value: number): string => {
   return '정보 없음';
 };
 
-const statusColor = {
+const statusColor: Record<string, string> = {
   우수: '#2ca02c',
   '매우 양호': '#2ca02c',
   양호: '#4caf50',
@@ -49,13 +55,13 @@ const metricDescriptions: Record<string, string> = {
   순이익률: '매출액 대비 최종 순이익의 비율로, 기업의 최종적인 수익성을 보여줍니다.',
 };
 
-export const ProfitabilityCard: React.FC<Props> = ({ data }) => {
-  const [visibleTooltip, setVisibleTooltip] = useState<string | null>(null);
+export const ProfitabilityOverview: React.FC<Props> = ({ data }) => {
+  const [tooltipKey, setTooltipKey] = useState<string | null>(null);
 
   if (!data || data.ratios.length === 0) return null;
 
-  const latest = data.ratios.find(
-    (r) => r.roe !== null || r.operating_margin !== null || r.net_margin !== null
+  const latest = data.ratios.find(r =>
+    r.roe !== null || r.operating_margin !== null || r.net_margin !== null
   );
   if (!latest) return null;
 
@@ -66,27 +72,6 @@ export const ProfitabilityCard: React.FC<Props> = ({ data }) => {
     { label: '순이익률', key: 'net_margin', value: latest.net_margin },
   ];
 
-  const tooltipStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: 30,
-    left: 0,
-    zIndex: 10,
-    background: '#333',
-    color: '#fff',
-    padding: '8px 12px',
-    borderRadius: 6,
-    fontSize: 12,
-    maxWidth: 240,
-    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-  };
-
-  const infoIconStyle: React.CSSProperties = {
-    marginLeft: 6,
-    cursor: 'pointer',
-    fontWeight: 'bold',
-    color: '#888',
-  };
-
   return (
     <div
       style={{
@@ -94,11 +79,11 @@ export const ProfitabilityCard: React.FC<Props> = ({ data }) => {
         padding: 20,
         borderRadius: 12,
         marginBottom: 24,
-        maxWidth: 900,
+        maxWidth: 1000,
         fontFamily: 'sans-serif',
       }}
     >
-      <h3 style={{ marginBottom: 16 }}>{latest.stac_yymm} 기준 수익성 비율</h3>
+      <h3 style={{ marginBottom: 16 }}>📋 수익성 구성 지표</h3>
       <div
         style={{
           display: 'grid',
@@ -116,35 +101,80 @@ export const ProfitabilityCard: React.FC<Props> = ({ data }) => {
             <div
               key={idx}
               style={{
-                padding: '8px 12px',
+                padding: '12px 16px',
                 borderRadius: 8,
                 background: '#fff',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                fontSize: 14,
                 position: 'relative',
               }}
             >
               <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
                 {item.label}
                 <span
-                  style={infoIconStyle}
+                  style={{
+                    marginLeft: 6,
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    color: '#888',
+                  }}
                   onClick={() =>
-                    setVisibleTooltip(visibleTooltip === item.label ? null : item.label)
+                    setTooltipKey(tooltipKey === item.label ? null : item.label)
                   }
-                  title="설명 보기"
                 >
                   ℹ️
                 </span>
-                {visibleTooltip === item.label && (
-                  <div style={tooltipStyle}>{metricDescriptions[item.label]}</div>
+                {tooltipKey === item.label && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 30,
+                      left: 0,
+                      zIndex: 10,
+                      background: '#333',
+                      color: '#fff',
+                      padding: '8px 12px',
+                      borderRadius: 6,
+                      fontSize: 12,
+                      maxWidth: 260,
+                      whiteSpace: 'pre-line',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                    }}
+                  >
+                    {metricDescriptions[item.label]}
+                  </div>
                 )}
               </div>
-              <div>
-                {item.value !== null && item.value !== undefined
-                  ? `${item.value.toFixed(2)}%`
-                  : '정보 없음'}
+
+              <ResponsiveContainer width="100%" height={130}>
+                <RadialBarChart
+                  cx="50%"
+                  cy="50%"
+                  innerRadius="60%"
+                  outerRadius="100%"
+                  barSize={12}
+                  data={[{
+                    name: item.label,
+                    value: item.value ?? 0,
+                    fill: statusColor[status],
+                  }]}
+                  startAngle={180}
+                  endAngle={0}
+                >
+                  {/* @ts-ignore */}
+                  <PolarAngleAxis
+                    type="number"
+                    domain={[0, 50]}
+                    angleAxisId={0}
+                    tick={false}
+                  />
+                  <RadialBar background dataKey="value" cornerRadius={6} />
+                </RadialBarChart>
+              </ResponsiveContainer>
+
+              <div style={{ textAlign: 'center', marginTop: 4, fontSize: 14 }}>
+                {item.value !== null ? `${item.value.toFixed(2)}%` : '정보 없음'} /{' '}
+                <span style={{ color: statusColor[status] }}>{status}</span>
               </div>
-              <div style={{ color: statusColor[status], marginTop: 4 }}>{status}</div>
             </div>
           );
         })}
