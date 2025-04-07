@@ -7,70 +7,47 @@ import {
 } from 'recharts';
 import { ProfitabilityResponse } from '../api/stockApi';
 
+interface Metric {
+  label: string;
+  value: number | null;
+  score: number;
+}
+
 interface Props {
   data: ProfitabilityResponse | null;
 }
 
-const getStatus = (key: string, value: number): string => {
-  if (key === 'roe') {
-    if (value >= 10) return '우수';
-    if (value >= 7) return '양호';
-    if (value >= 3) return '보통';
-    return '위험';
-  }
-  if (key === 'roa') {
-    if (value >= 5) return '우수';
-    if (value >= 3) return '양호';
-    if (value >= 1) return '보통';
-    return '위험';
-  }
-  if (key === 'net_margin') {
-    if (value >= 10) return '매우 양호';
-    if (value >= 7) return '양호';
-    if (value >= 3) return '보통';
-    return '위험';
-  }
-  if (key === 'operating_margin') {
-    if (value >= 30) return '우수';
-    if (value >= 20) return '양호';
-    if (value >= 10) return '보통';
-    return '위험';
-  }
-  return '정보 없음';
+const getStatus = (score: number): '우수' | '양호' | '보통' | '위험' => {
+  if (score >= 25) return '우수';
+  if (score >= 15) return '양호';
+  if (score >= 5) return '보통';
+  return '위험';
 };
 
-const statusColor: Record<string, string> = {
+const statusColor: Record<'우수' | '양호' | '보통' | '위험', string> = {
   우수: '#2ca02c',
-  '매우 양호': '#2ca02c',
   양호: '#4caf50',
-  보통: '#ff9800',
+  보통: '#f9c80e',
   위험: '#d62728',
-  '정보 없음': '#999',
 };
 
-const metricDescriptions: Record<string, string> = {
-  ROE: '자기자본이익률로, 자기자본을 얼마나 효율적으로 활용해 이익을 냈는지를 나타냅니다.',
-  ROA: '총자산이익률로, 총자산 대비 얼마나 이익을 냈는지를 보여주는 수익성 지표입니다.',
-  영업이익률: '매출액 대비 영업이익의 비율로, 영업활동의 수익성을 나타냅니다.',
-  순이익률: '매출액 대비 최종 순이익의 비율로, 기업의 최종적인 수익성을 보여줍니다.',
+const descriptions: Record<string, string> = {
+  ROE: '📌 ROE (자기자본이익률)\n\n자기자본을 얼마나 효율적으로 활용해 이익을 냈는지를 나타냅니다.',
+  ROA: '📌 ROA (총자산이익률)\n\n총자산 대비 이익률로, 기업 전체 자산의 효율성을 보여줍니다.',
+  영업이익률: '📌 영업이익률\n\n매출에서 영업이익이 차지하는 비율로, 핵심 사업의 수익성을 나타냅니다.',
+  순이익률: '📌 순이익률\n\n매출 대비 최종 이익 비율로, 기업 전체의 수익성 수준을 반영합니다.',
 };
 
 export const ProfitabilityOverview: React.FC<Props> = ({ data }) => {
   const [tooltipKey, setTooltipKey] = useState<string | null>(null);
 
-  if (!data || data.ratios.length === 0) return null;
+  if (!data || !data.score_details || data.score_details.length === 0) return null;
 
-  const latest = data.ratios.find(r =>
-    r.roe !== null || r.operating_margin !== null || r.net_margin !== null
-  );
-  if (!latest) return null;
-
-  const metrics = [
-    { label: 'ROE', key: 'roe', value: latest.roe },
-    { label: 'ROA', key: 'roa', value: latest.roa },
-    { label: '영업이익률', key: 'operating_margin', value: latest.operating_margin },
-    { label: '순이익률', key: 'net_margin', value: latest.net_margin },
-  ];
+  const metrics: Metric[] = data.score_details.map((item) => ({
+    label: item.label,
+    value: typeof item.value === 'number' ? item.value : null,
+    score: item.score,
+  }));
 
   return (
     <div
@@ -92,10 +69,8 @@ export const ProfitabilityOverview: React.FC<Props> = ({ data }) => {
         }}
       >
         {metrics.map((item, idx) => {
-          const status =
-            item.value !== null && item.value !== undefined
-              ? getStatus(item.key, item.value)
-              : '정보 없음';
+          const status = getStatus(item.score);
+          const color = statusColor[status];
 
           return (
             <div
@@ -140,7 +115,7 @@ export const ProfitabilityOverview: React.FC<Props> = ({ data }) => {
                       boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
                     }}
                   >
-                    {metricDescriptions[item.label]}
+                    {descriptions[item.label]}
                   </div>
                 )}
               </div>
@@ -152,18 +127,20 @@ export const ProfitabilityOverview: React.FC<Props> = ({ data }) => {
                   innerRadius="60%"
                   outerRadius="100%"
                   barSize={12}
-                  data={[{
-                    name: item.label,
-                    value: item.value ?? 0,
-                    fill: statusColor[status],
-                  }]}
+                  data={[
+                    {
+                      name: item.label,
+                      value: item.score,
+                      fill: color,
+                    },
+                  ]}
                   startAngle={180}
                   endAngle={0}
                 >
                   {/* @ts-ignore */}
                   <PolarAngleAxis
                     type="number"
-                    domain={[0, 50]}
+                    domain={[0, 30]}
                     angleAxisId={0}
                     tick={false}
                   />
@@ -173,7 +150,7 @@ export const ProfitabilityOverview: React.FC<Props> = ({ data }) => {
 
               <div style={{ textAlign: 'center', marginTop: 4, fontSize: 14 }}>
                 {item.value !== null ? `${item.value.toFixed(2)}%` : '정보 없음'} /{' '}
-                <span style={{ color: statusColor[status] }}>{status}</span>
+                <span style={{ color }}>{status}</span>
               </div>
             </div>
           );

@@ -20,6 +20,7 @@ import { VolatilityRiskOverview } from './VolatilityRiskOverview';
 import { SupplyRiskGauge } from './SupplyRiskGauge';
 import { SupplyRiskOverview } from './SupplyRiskOverview';
 import { ProfitabilityOverview } from './ProfitabilityOverview';
+import { ProfitabilityGauge } from './ProfitabilityGauge';
 import { StabilityRiskOverview } from './StabilityRiskOverview';
 import { StabilityGauge } from './StabilityGauge';
 
@@ -197,8 +198,15 @@ export const ChartWrapper: React.FC = () => {
         </div>
       )}
 
-      {/* ✅ 수익성 비율 */}
-      <ProfitabilityOverview data={profitability} />
+      {/* ✅ 수익성 점수 및 구성 지표 */}
+      {profitability && profitability.score_details && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+          <ProfitabilityOverview data={profitability} />
+          <div style={{ gridColumn: '1 / -1' }}>
+            <ProfitabilityGauge score={profitability.profitability_score} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

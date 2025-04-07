@@ -6,7 +6,7 @@ from .utils.stock_lookup import find_symbol
 from .routes import stock_list_route  # 👉 종목 리스트 라우트
 from .routes import stock_summary_route # 주식 최소 정보카드
 from .routes import financial_route # 주식 재무제표 기준 리스크 분석(안정성 비율 -> 가중치 계산 포함)
-from .routes import profitability_route # 주식 재무제표 기준 리스크 분석(수익성 비율)
+from .routes import profitability_route # 주식 재무제표 기준 리스크 분석(수익성 비율 -> 가중치 계산 포함)
 from .routes import volatility_route # 주식 재무제표 기준 리스크 분석(변동성 비율 -> 가중치 계산 포함)
 from .routes import supply_route # 주식 재무제표 기준 리스크 분석(외국인 매매 동향(수급) -> 가중치 계산 포함)
 

@@ -47,6 +47,33 @@ export const fetchFinancialRatios = async (query: string): Promise<FinancialResp
   return res.json();
 };
 
+// ✅ 수익성 점수
+export interface ProfitabilityMetric {
+  label: string;
+  value: number;
+  score: number;
+}
+
+export interface ProfitabilityResponse {
+  symbol: string;
+  report_date: string;
+  profitability_score: number;
+  risk_level: string;
+  raw_data: {
+    roe: number;
+    roa: number;
+    operating_margin: number;
+    net_margin: number;
+  };
+  score_details: ProfitabilityMetric[];
+}
+
+export const fetchProfitabilityRatios = async (query: string): Promise<ProfitabilityResponse> => {
+  const res = await fetch(`http://localhost:8000/stock/profitability?query=${query}`);
+  if (!res.ok) throw new Error('수익성 점수 조회 실패');
+  return res.json();
+};
+
 // ✅ 캔들 차트 데이터
 export async function fetchCandles(
   query: string,
@@ -60,26 +87,6 @@ export async function fetchCandles(
     return [];
   }
 }
-
-// ✅ 수익성 비율
-export interface ProfitabilityItem {
-  stac_yymm: string;
-  roe: number;
-  roa: number;
-  operating_margin: number;
-  net_margin: number;
-}
-
-export interface ProfitabilityResponse {
-  symbol: string;
-  ratios: ProfitabilityItem[];
-}
-
-export const fetchProfitabilityRatios = async (query: string): Promise<ProfitabilityResponse> => {
-  const res = await fetch(`http://localhost:8000/stock/profitability?query=${query}`);
-  if (!res.ok) throw new Error('수익성 비율 조회 실패');
-  return res.json();
-};
 
 // ✅ 변동성 점수
 export interface VolatilityMetric {
