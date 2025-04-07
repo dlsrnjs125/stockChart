@@ -156,14 +156,32 @@ export const ChartWrapper: React.FC = () => {
           </ul>
         )}
 
-        <label style={{ marginLeft: 20 }}>
-          단위:
-          <select value={timeframe} onChange={(e) => setTimeframe(e.target.value as any)}>
-            <option value="daily">일</option>
-            <option value="weekly">주</option>
-            <option value="monthly">월</option>
-          </select>
-        </label>
+        <div style={{ display: 'inline-flex', gap: 8, alignItems: 'center', marginLeft: 20 }}>
+          <span style={{ fontWeight: 500 }}>단위:</span>
+          {['daily', 'weekly', 'monthly'].map((unit) => {
+            const label = unit === 'daily' ? '일' : unit === 'weekly' ? '주' : '월';
+            const isActive = timeframe === unit;
+
+            return (
+              <button
+                key={unit}
+                onClick={() => setTimeframe(unit as any)}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: 6,
+                  border: isActive ? '2px solid #1976d2' : '1px solid #ccc',
+                  background: isActive ? '#e3f2fd' : '#fff',
+                  color: isActive ? '#1976d2' : '#333',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  minWidth: 40,
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <D3CandlestickChart data={data} symbol={symbol} timeframe={timeframe} />

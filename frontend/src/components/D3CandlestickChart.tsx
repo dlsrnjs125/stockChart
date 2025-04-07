@@ -6,7 +6,7 @@ import { StockCandle } from '../types/stock';
 interface Props {
   data: StockCandle[];
   symbol: string;
-  timeframe: 'daily' | 'weekly' | 'monthly';
+  timeframe: 'daily' | 'weekly' | 'monthly' | 'yearly';
 }
 
 export const D3CandlestickChart: React.FC<Props> = ({ data, symbol, timeframe }) => {
@@ -53,7 +53,6 @@ export const D3CandlestickChart: React.FC<Props> = ({ data, symbol, timeframe })
       .domain([0, d3.max(candles, (d) => d.volume)! * 1.2])
       .range([innerHeight, innerHeight - volumeHeight]);
 
-    // ✅ Y축 격자선
     svgArea.append('g')
       .attr('class', 'grid y-grid')
       .call(
@@ -62,7 +61,6 @@ export const D3CandlestickChart: React.FC<Props> = ({ data, symbol, timeframe })
           .tickFormat(() => '')
       );
 
-    // ✅ X축 격자선
     svgArea.append('g')
       .attr('class', 'grid x-grid')
       .attr('transform', `translate(0, ${innerHeight - volumeHeight})`)
@@ -72,7 +70,6 @@ export const D3CandlestickChart: React.FC<Props> = ({ data, symbol, timeframe })
           .tickFormat(() => '')
       );
 
-    // ✅ 실제 축
     svgArea
       .append('g')
       .attr('transform', `translate(0, ${innerHeight})`)
@@ -146,14 +143,14 @@ export const D3CandlestickChart: React.FC<Props> = ({ data, symbol, timeframe })
     const tooltipGroup = svg.append('g').style('display', 'none');
     const tooltipBox = tooltipGroup.append('rect')
       .attr('width', 160)
-      .attr('height', 100)
+      .attr('height', 120)
       .attr('rx', 8)
       .attr('ry', 8)
       .attr('fill', 'white')
       .attr('stroke', '#ccc')
       .attr('opacity', 0.95);
 
-    const tooltipLines = Array.from({ length: 6 }).map((_, i) =>
+    const tooltipLines = Array.from({ length: 7 }).map((_, i) =>
       tooltipGroup.append('text')
         .attr('x', 12)
         .attr('y', 20 + i * 15)
@@ -189,15 +186,21 @@ export const D3CandlestickChart: React.FC<Props> = ({ data, symbol, timeframe })
         .style('display', null)
         .attr('transform', `translate(${tooltipX},${my - 60})`);
 
+      const changeRate = ((closest.close - closest.open) / closest.open) * 100;
+      const rateColor = changeRate >= 0 ? 'red' : 'blue';
+
       tooltipLines[0].text(`📅 ${d3.timeFormat('%Y-%m-%d')(closest.date)}`);
       tooltipLines[1].text(`시: ${closest.open.toLocaleString()}`);
       tooltipLines[2].text(`고: ${closest.high.toLocaleString()}`);
       tooltipLines[3].text(`저: ${closest.low.toLocaleString()}`);
       tooltipLines[4].text(`종: ${closest.close.toLocaleString()}`);
-      tooltipLines[5].text(`거래량: ${(closest.volume / 1_000_000).toFixed(1)}M`);
+      tooltipLines[5]
+        .text(`변동률: ${changeRate.toFixed(2)}%`)
+        .attr('fill', rateColor);
+      tooltipLines[6].text(`거래량: ${(closest.volume / 1_000_000).toFixed(1)}M`);
 
-      staticText.text(
-        `📅 ${d3.timeFormat('%Y-%m-%d')(closest.date)} | 시: ${closest.open.toLocaleString()} 고: ${closest.high.toLocaleString()} 저: ${closest.low.toLocaleString()} 종: ${closest.close.toLocaleString()} 거래량: ${(closest.volume / 1_000_000).toFixed(1)}M`
+      staticText.html(
+        `📅 ${d3.timeFormat('%Y-%m-%d')(closest.date)} | 시: ${closest.open.toLocaleString()} 고: ${closest.high.toLocaleString()} 저: ${closest.low.toLocaleString()} 종: ${closest.close.toLocaleString()} <tspan fill="${rateColor}">(${changeRate.toFixed(2)}%)</tspan> 거래량: ${(closest.volume / 1_000_000).toFixed(1)}M`
       );
 
       crosshairV.attr('x1', xPos).attr('x2', xPos).style('display', null);
