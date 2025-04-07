@@ -8,32 +8,39 @@ import {
 import { SupplyMetric } from '../api/stockApi';
 
 interface Props {
-  data: SupplyMetric[];
+  data: SupplyMetric[]; // value 필드 포함되어 있어야 함
 }
 
+// 설명 텍스트
 const descriptions: Record<string, string> = {
   '외국인 지분율': `📌 외국인 지분율\n\n외국인이 해당 종목을 얼마나 보유하고 있는지를 나타냅니다.\n40% 이상이면 수급이 안정적인 것으로 평가됩니다.`,
   '외국인 순매수': `📌 외국인 순매수\n\n외국인의 매수/매도 흐름을 나타냅니다.\n매수 우위일수록 긍정적인 신호입니다.`,
   '기관 순매수': `📌 기관 순매수\n\n기관 투자자의 수급 동향을 나타냅니다.\n기관의 지속적인 매수는 상승 기대 요인이 될 수 있습니다.`,
-  '회전율(유동성)': `📌 회전율\n\n유통 주식 대비 거래량 비율로 유동성을 나타냅니다.\n너무 낮거나 높은 경우 단기 리스크로 작용할 수 있습니다.`,
+  '회전율(유동성)': `📌 회전율\n\n유통 주식 대비 거래량 비율로 유동성을 나타냅니다.\n0.1~2.0% 범위가 적정 수준입니다.`,
 };
 
-const getStatus = (label: string, score: number): '좋음' | '보통' | '위험' => {
-  const goodCut = {
-    '외국인 지분율': 24,
-    '외국인 순매수': 20,
-    '기관 순매수': 20,
-    '회전율(유동성)': 16,
-  };
-  const warningCut = {
-    '외국인 지분율': 15,
-    '외국인 순매수': 12,
-    '기관 순매수': 12,
-    '회전율(유동성)': 10,
-  };
-  if (score >= goodCut[label]) return '좋음';
-  if (score >= warningCut[label]) return '보통';
-  return '위험';
+// ✅ 수치 기반 상태 판단
+const getStatusByValue = (label: string, value: number): '좋음' | '보통' | '위험' => {
+  switch (label) {
+    case '외국인 지분율':
+      if (value >= 40) return '좋음';
+      if (value >= 20) return '보통';
+      return '위험';
+
+    case '외국인 순매수':
+    case '기관 순매수':
+      if (value > 1_000_000) return '좋음';
+      if (value > 0) return '보통';
+      return '위험';
+
+    case '회전율(유동성)':
+      if (value >= 0.1 && value <= 2.0) return '좋음';
+      if (value <= 5.0) return '보통';
+      return '위험';
+
+    default:
+      return '보통';
+  }
 };
 
 const statusColor: Record<'좋음' | '보통' | '위험', string> = {
@@ -67,7 +74,7 @@ export const SupplyRiskOverview: React.FC<Props> = ({ data }) => {
         }}
       >
         {data.map((item, i) => {
-          const status = getStatus(item.label, item.score);
+          const status = getStatusByValue(item.label, item.value);
           const color = statusColor[status];
 
           return (
@@ -81,6 +88,7 @@ export const SupplyRiskOverview: React.FC<Props> = ({ data }) => {
                 boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
               }}
             >
+              {/* 제목 + 툴팁 */}
               <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
                 {item.label}
                 <span
@@ -119,6 +127,7 @@ export const SupplyRiskOverview: React.FC<Props> = ({ data }) => {
                 )}
               </div>
 
+              {/* 도넛 차트 */}
               <ResponsiveContainer width="100%" height={130}>
                 <RadialBarChart
                   cx="50%"
@@ -139,7 +148,7 @@ export const SupplyRiskOverview: React.FC<Props> = ({ data }) => {
                   {/* @ts-ignore */}
                   <PolarAngleAxis
                     type="number"
-                    domain={[0, 30]}
+                    domain={[0, item.max || 30]}
                     angleAxisId={0}
                     tick={false}
                   />
@@ -147,9 +156,12 @@ export const SupplyRiskOverview: React.FC<Props> = ({ data }) => {
                 </RadialBarChart>
               </ResponsiveContainer>
 
+              {/* 수치 + 상태 출력 */}
               <div style={{ textAlign: 'center', marginTop: 4, fontSize: 14 }}>
-                {item.score.toFixed(1)}점 /{' '}
-                <span style={{ color }}>{status}</span>
+                {typeof item.value === 'number'
+                  ? `${item.value.toLocaleString()}`
+                  : '정보 없음'}{' '}
+                / <span style={{ color }}>{status}</span>
               </div>
             </div>
           );

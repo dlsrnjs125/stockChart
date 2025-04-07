@@ -73,7 +73,7 @@ def score_financial_stability(data: dict) -> dict:
     score3 = score_crnt_rate(crnt_rate)
     score4 = score_quck_rate(quck_rate)
 
-    total_score = score1 + score2 + score3 + score4
+    total_score = (score1 + score2 + score3 + score4) * (100/120) # 전체 점수 비율 100점으로 환산
 
     risk_level = (
         "안정" if total_score >= 90 else "보통" if total_score >= 60 else "위험"

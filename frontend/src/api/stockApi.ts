@@ -115,6 +115,7 @@ export const fetchVolatility = async (query: string): Promise<VolatilityResponse
 // ✅ 수급 리스크 점수 (Radar 차트)
 export interface SupplyMetric {
   label: string;
+  value: number;
   score: number;
   max: number;
 }

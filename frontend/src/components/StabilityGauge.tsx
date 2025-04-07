@@ -12,11 +12,11 @@ interface Props {
 
 export const StabilityGauge: React.FC<Props> = ({ score }) => {
   const color =
-    score >= 90 ? '#2ca02c' : score >= 60 ? '#f9c80e' : '#d62728';
+    score >= 75 ? '#2ca02c' : score >= 50 ? '#f9c80e' : '#d62728';
 
   const getRiskLevel = (score: number): '안정' | '보통' | '위험' => {
-    if (score >= 90) return '안정';
-    if (score >= 60) return '보통';
+    if (score >= 75) return '안정';
+    if (score >= 50) return '보통';
     return '위험';
   };
   const riskLevel = getRiskLevel(score);
@@ -39,12 +39,12 @@ export const StabilityGauge: React.FC<Props> = ({ score }) => {
   };
 
   const explanation = `📌 안정성 점수란?\n
-부채비율, 고정비율, 유동비율, 당좌비율 각각을 30점 만점으로 평가하여 계산한 총점입니다.
-최대 120점이며, 점수가 높을수록 재무 안정성이 뛰어납니다.
+부채비율, 고정비율, 유동비율, 당좌비율 각각을 평가하여 계산한 총점입니다.
+총점은 100점 만점이며, 점수가 높을수록 재무 안정성이 뛰어납니다.
 
-- 90점 이상 : 안정
-- 60~89점 : 보통
-- 60점 미만 : 위험`;
+- 75점 이상 : 안정
+- 50~74점 : 보통
+- 50점 미만 : 위험`;
 
   return (
     <div style={{ marginBottom: 24, maxWidth: 300, position: 'relative' }}>
@@ -73,12 +73,11 @@ export const StabilityGauge: React.FC<Props> = ({ score }) => {
           data={[{ name: 'stability', value: score, fill: color }]}
         >
           {/* @ts-ignore */}
-          <PolarAngleAxis type="number" domain={[0, 120]} tick={false} angleAxisId={0} />
+          <PolarAngleAxis type="number" domain={[0, 100]} tick={false} angleAxisId={0} />
           <RadialBar background dataKey="value" cornerRadius={10} />
         </RadialBarChart>
       </ResponsiveContainer>
 
-      {/* ✅ 점수 + 위험 수준 출력 */}
       <div style={{ textAlign: 'center', marginTop: 8 }}>
         <div style={{ fontSize: 18, fontWeight: 600, color }}>{score}</div>
         <div style={{ fontSize: 14, fontWeight: 500, color }}>{riskLevel}</div>

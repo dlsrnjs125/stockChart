@@ -1,14 +1,27 @@
 import os
 import requests
-from ..core.token_manager import get_access_token
 from dotenv import load_dotenv
+from ..core.token_manager import get_access_token
 
 load_dotenv()
 
 
+# ✅ 수급 점수 계산 함수 (100점 만점, 수치 기반 평가)
 def score_supply_demand(data: dict) -> dict:
-    def score_foreign_ratio(val):
-        val = float(val)
+    def safe_float(val):
+        try:
+            return float(val)
+        except:
+            return 0.0
+
+    def safe_int(val):
+        try:
+            return int(val)
+        except:
+            return 0
+
+    def score_foreign_ratio(val):  # 외국인 지분율
+        val = safe_float(val)
         if val >= 50:
             return 30
         elif val >= 40:
@@ -20,48 +33,67 @@ def score_supply_demand(data: dict) -> dict:
         else:
             return 5
 
-    def score_net_buy(qty):
-        qty = int(qty)
+    def score_net_buy(qty):  # 순매수량
+        qty = safe_int(qty)
         if qty > 1_000_000:
             return 25
-        elif qty > 0:
+        elif qty > 100_000:
             return 20
-        elif qty > -500_000:
-            return 10
+        elif qty > 0:
+            return 15
+        elif qty > -100_000:
+            return 5
         else:
             return 0
 
-    def score_turnover(turnover):
-        turnover = float(turnover)
-        if 0.1 <= turnover <= 2.0:
+    def score_turnover(val):  # 회전율
+        val = safe_float(val)
+        if 0.1 <= val <= 2.0:
             return 20
-        elif turnover <= 5.0:
+        elif val <= 5.0:
             return 10
         else:
             return 5
 
     # 개별 점수 계산
-    score1 = score_foreign_ratio(data.get("hts_frgn_ehrt", 0))
-    score2 = score_net_buy(data.get("frgn_ntby_qty", 0))
-    score3 = score_net_buy(data.get("pgtr_ntby_qty", 0))
-    score4 = score_turnover(data.get("vol_tnrt", 0.15))
+    score1 = score_foreign_ratio(data.get("hts_frgn_ehrt"))
+    score2 = score_net_buy(data.get("frgn_ntby_qty"))
+    score3 = score_net_buy(data.get("pgtr_ntby_qty"))
+    score4 = score_turnover(data.get("vol_tnrt"))
 
     total_score = score1 + score2 + score3 + score4
 
     return {
         "score_by_metric": [
-            {"label": "외국인 지분율", "score": score1, "max": 30},
-            {"label": "외국인 순매수", "score": score2, "max": 25},
-            {"label": "기관 순매수", "score": score3, "max": 25},
-            {"label": "회전율(유동성)", "score": score4, "max": 20},
+            {
+                "label": "외국인 지분율",
+                "value": safe_float(data.get("hts_frgn_ehrt")),
+                "score": score1,
+            },
+            {
+                "label": "외국인 순매수",
+                "value": safe_int(data.get("frgn_ntby_qty")),
+                "score": score2,
+            },
+            {
+                "label": "기관 순매수",
+                "value": safe_int(data.get("pgtr_ntby_qty")),
+                "score": score3,
+            },
+            {
+                "label": "회전율(유동성)",
+                "value": safe_float(data.get("vol_tnrt")),
+                "score": score4,
+            },
         ],
-        "total_score": total_score,
+        "total_score": round(total_score, 2),
         "risk_level": (
-            "낮음" if total_score >= 80 else "보통" if total_score >= 50 else "높음"
+            "낮음" if total_score >= 70 else "보통" if total_score >= 40 else "높음"
         ),
     }
 
 
+# ✅ 종목 실시간 요약 데이터 (수급용 필드 포함)
 def get_stock_summary(symbol: str) -> dict:
     def safe_int(value) -> int:
         try:
@@ -117,9 +149,9 @@ def get_stock_summary(symbol: str) -> dict:
         "previous_close": safe_int(output.get("stck_sdpr")),
         "volume": safe_int(output.get("acml_vol")),
         "trade_amount": safe_int(output.get("acml_tr_pbmn")),
-        # 수급 점수화용 필드
-        "hts_frgn_ehrt": safe_float(output.get("hts_frgn_ehrt")),
-        "frgn_ntby_qty": safe_int(output.get("frgn_ntby_qty")),
-        "pgtr_ntby_qty": safe_int(output.get("pgtr_ntby_qty")),
-        "vol_tnrt": safe_float(output.get("vol_tnrt")),
+        # ✅ 수급 점수에 필요한 필드
+        "hts_frgn_ehrt": safe_float(output.get("hts_frgn_ehrt")),  # 외국인 지분율
+        "frgn_ntby_qty": safe_int(output.get("frgn_ntby_qty")),  # 외국인 순매수량
+        "pgtr_ntby_qty": safe_int(output.get("pgtr_ntby_qty")),  # 기관 순매수량
+        "vol_tnrt": safe_float(output.get("vol_tnrt")),  # 회전율
     }
